@@ -5,7 +5,9 @@ Shader "Custom/AlwaysVisibleLine" {
     SubShader {
         Tags { "RenderType"="Opaque" }
         Pass {
-            ZTest Always
+            Cull Off        // for double‑sided
+            ZTest Always    // always pass depth test
+            ZWrite Off      // don't write to depth
             
             CGPROGRAM
             #pragma vertex vert
