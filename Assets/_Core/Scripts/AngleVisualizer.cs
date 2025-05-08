@@ -13,42 +13,72 @@ using UnityEngine.UI;
 [RequireComponent(typeof(LineRenderer))]
 public class AngleMeasurementTool : MonoBehaviour
 {
+
+    #region Inspector
     [Header("Scene references")]
-    public Camera mainCamera;
-    public Transform canvasRoot;          // A world‑space canvas
-    public GameObject textPrefab;         // A TextMeshProUGUI prefab (world‑space)
-    public Material filledArcMaterial;    // Unlit + transparent material works best
-    public Button clearButton;
+    [Tooltip("Camera used to ray‑cast taps.")]
+    [SerializeField] private Camera mainCamera;
+    
+    [Tooltip("Canvas used to display the angle label.")]
+    [SerializeField] private Transform canvasRoot;          // A world‑space canvas
+    
+    [Tooltip("Prefab for the angle label.")]
+    [SerializeField] private GameObject textPrefab;         // A TextMeshProUGUI prefab (world‑space)
+    
+    [Tooltip("Material used to draw the filled arc.")]
+    [SerializeField] private Material filledArcMaterial;    // Unlit + transparent material works best
+    
+    [Header("Interaction")]
+    [SerializeField] private Button clearButton;
 
     [Header("Visual settings")]
-    [Range(0.05f, 5f)] public float arcRadius = 0.5f;
-    [Range(4, 128)]   public int   arcSegments = 40;
+    [Range(0.05f, 5f)] [SerializeField] private float arcRadius = 0.5f;
+    [Range(4, 128)]   [SerializeField] private int   arcSegments = 40;
+    #endregion
+    // ──────────────────────────────────────────────────────────
+    #region Private fields
+    private readonly List<Vector3> _points = new();   // Selected positions
+    private LineRenderer           _line;             // Draws the two sides
+    private GameObject             _arcGo;            // Holds the arc mesh
+    private Mesh                   _arcMesh;          // Re‑used each frame
+    private TextMeshProUGUI        _angleLabel;       // Angle value
+    #endregion
+    // ──────────────────────────────────────────────────────────
+    #region Unity Life Cycle
+    
+    private void Awake ()
+    {
+        InitializeTool();
+    }
     
     // ──────────────────────────────────────────────────────────
+    private void Update ()
+    {
+        // 1. Handle mouse clicks until we have three points -------------------
+        HandlePointerDown();
 
-    readonly List<Vector3> _points = new();   // Selected positions
-    LineRenderer           _line;             // Draws the two sides
-    GameObject             _arcGO;            // Holds the arc mesh
-    Mesh                   _arcMesh;          // Re‑used each frame
-    TextMeshProUGUI        _angleLabel;       // Angle value
-    static readonly int[]  _triCache = new int[3 * 130]; // temp triangle cache (max 128 segs)
-
-    static int[] _triTemp;
+        // 2. If three points exist, update every frame so live‑moving works ---
+        if (_points.Count == 3)
+        {
+            UpdateVisuals();
+        }
+    }
+    #endregion
     // ──────────────────────────────────────────────────────────
-
-    void Awake ()
+    #region Private methods
+    private void InitializeTool()
     {
         _line = GetComponent<LineRenderer>();
         _line.positionCount = 0;
         _line.useWorldSpace = true;
 
         // Arc mesh container ---------------------------------------------------
-        _arcGO = new GameObject("AngleArc", typeof(MeshFilter), typeof(MeshRenderer));
-        _arcGO.transform.parent = transform;
+        _arcGo = new GameObject("AngleArc", typeof(MeshFilter), typeof(MeshRenderer));
+        _arcGo.transform.parent = transform;
         _arcMesh = new Mesh { name = "AngleArcMesh" };
         
-        _arcGO.GetComponent<MeshFilter>().sharedMesh = _arcMesh;
-        _arcGO.GetComponent<MeshRenderer>().material = filledArcMaterial;
+        _arcGo.GetComponent<MeshFilter>().sharedMesh = _arcMesh;
+        _arcGo.GetComponent<MeshRenderer>().material = filledArcMaterial;
 
         // Label ---------------------------------------------------------------
         _angleLabel = Instantiate(textPrefab, canvasRoot).GetComponent<TextMeshProUGUI>();
@@ -56,11 +86,9 @@ public class AngleMeasurementTool : MonoBehaviour
 
         clearButton.onClick.AddListener(Clear);
     }
-
-    // ──────────────────────────────────────────────────────────
-    void Update ()
+    
+    private void HandlePointerDown()
     {
-        // 1. Handle mouse clicks until we have three points -------------------
         if (Input.GetMouseButtonDown(0) && _points.Count < 3)
         {
             if (Physics.Raycast(mainCamera.ScreenPointToRay(Input.mousePosition),
@@ -70,22 +98,14 @@ public class AngleMeasurementTool : MonoBehaviour
                 if (_points.Count == 3) BuildLineRenderer();
             }
         }
-
-        // 2. If three points exist, update every frame so live‑moving works ---
-        if (_points.Count == 3)
-        {
-            UpdateVisuals();
-        }
     }
-
-    // ──────────────────────────────────────────────────────────
-    void BuildLineRenderer ()
+    
+    private void BuildLineRenderer ()
     {
         _line.positionCount = 4; // A‑B, A‑C (A duplicated)
         _line.widthMultiplier = 0.01f;
     }
-
-    void UpdateVisuals()
+    private void UpdateVisuals()
     {
         Vector3 A = _points[0];
         Vector3 B = _points[1];
@@ -116,8 +136,7 @@ public class AngleMeasurementTool : MonoBehaviour
         // Draw filled arc ------------------------------------------------------
         DrawFilledArc(A, dir1, Vector3.Cross(dir1, dir2).normalized, angleRad);
     }
-
-    void DrawFilledArc(Vector3 center, Vector3 startDir, Vector3 normal, float angleRad)
+    private void DrawFilledArc(Vector3 center, Vector3 startDir, Vector3 normal, float angleRad)
     {
         Mesh mesh = new Mesh();
         List<Vector3> vertices = new() { center };
@@ -142,17 +161,16 @@ public class AngleMeasurementTool : MonoBehaviour
         mesh.SetVertices(vertices);
         mesh.SetTriangles(triangles, 0);
         mesh.RecalculateNormals();
-        _arcGO.GetComponent<MeshFilter>().mesh = mesh;
+        _arcGo.GetComponent<MeshFilter>().mesh = mesh;
         
     }
-
-    
-    public void Clear ()
+    private void Clear ()
     {
         _points.Clear();
         _line.positionCount = 0;
         _arcMesh.Clear();
         _angleLabel.text = string.Empty;
-        _arcGO.GetComponent<MeshFilter>().mesh = null;
+        _arcGo.GetComponent<MeshFilter>().mesh = null;
     }
+    #endregion
 }
