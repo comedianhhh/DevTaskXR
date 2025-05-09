@@ -35,7 +35,7 @@ public class AngleMeasurementTool : MonoBehaviour
     [Range(0.05f, 5f)] [SerializeField] private float arcRadius = 0.5f;
     [Range(4, 128)]   [SerializeField] private int   arcSegments = 40;
     #endregion
-    // ──────────────────────────────────────────────────────────
+
     #region Private fields
     private readonly List<Vector3> _points = new();   // Selected positions
     private LineRenderer           _line;             // Draws the two sides
@@ -43,7 +43,7 @@ public class AngleMeasurementTool : MonoBehaviour
     private Mesh                   _arcMesh;          // Re‑used each frame
     private TextMeshProUGUI        _angleLabel;       // Angle value
     #endregion
-    // ──────────────────────────────────────────────────────────
+
     #region Unity Life Cycle
     
     private void Awake ()
@@ -64,7 +64,7 @@ public class AngleMeasurementTool : MonoBehaviour
         }
     }
     #endregion
-    // ──────────────────────────────────────────────────────────
+
     #region Private methods
     private void InitializeTool()
     {

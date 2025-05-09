@@ -11,7 +11,7 @@ using UnityEngine.EventSystems;
 public class DynamicPivotTool : MonoBehaviour
 {
 
-    #region Inspector Fields
+    #region Inspector
     [Header("Scene References")]
     [Tooltip("Camera used to ray‑cast taps / drags.")]
     [SerializeField] private Camera cam;
@@ -29,13 +29,13 @@ public class DynamicPivotTool : MonoBehaviour
     [Tooltip("Degrees per pixel while dragging.")]
     [SerializeField] private float rotationSpeed = 0.25f;
     #endregion
-    // ────────────────────────────────────────────────────────────────
+    
     #region Private Fields
     private GameObject _markerInstance;
     private bool _isDragging;
     private Vector3 _prevPointerPos;
     #endregion
-    // ────────────────────────────────────────────────────────────────
+    
     #region Unity Life Cycle
     void Awake()
     {
@@ -48,7 +48,7 @@ public class DynamicPivotTool : MonoBehaviour
         HandleDrag();
     }
     #endregion
-    // ────────────────────────────────────────────────────────────────
+    
     #region Private Methods
     
     private void HandlePointerDown()
